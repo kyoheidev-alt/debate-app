@@ -24,10 +24,13 @@ export default function GuidePage() {
       </div>
 
       <header className="border-b border-navy-600/60 bg-navy-800/60 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-3">
           <Brand href="/" size="sm" />
-          <Link href="/" className="btn-secondary text-xs">
-            トップへ戻る
+          <Link
+            href="/"
+            className="text-xs font-semibold tracking-wide text-gold-500 underline-offset-2 hover:text-gold-400 hover:underline"
+          >
+            トップページへ
           </Link>
         </div>
       </header>

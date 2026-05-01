@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -59,8 +60,14 @@ export default async function SetupNicknamePage({
       </div>
 
       <header className="border-b border-navy-600/60 bg-navy-800/60 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <Brand size="sm" />
+        <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-3">
+          <Brand href="/" size="sm" />
+          <Link
+            href="/"
+            className="text-xs font-semibold tracking-wide text-gold-500 underline-offset-2 hover:text-gold-400 hover:underline"
+          >
+            トップページへ
+          </Link>
         </div>
       </header>
 

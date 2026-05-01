@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EnterForm } from "@/app/r/[id]/enter/EnterForm";
@@ -42,8 +43,14 @@ export default async function RoomEnterPage({
       </div>
 
       <header className="border-b border-navy-600/60 bg-navy-800/60 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <Brand size="sm" />
+        <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-3">
+          <Brand href="/" size="sm" />
+          <Link
+            href="/"
+            className="text-xs font-semibold tracking-wide text-gold-500 underline-offset-2 hover:text-gold-400 hover:underline"
+          >
+            トップページへ
+          </Link>
         </div>
       </header>
 
@@ -67,7 +74,7 @@ export default async function RoomEnterPage({
 
         <EnterForm roomId={room.id} />
 
-        <p className="text-center text-xs text-muted">
+        <p className="rounded-md border border-gold-500/35 bg-navy-900/80 px-4 py-3 text-center text-xs leading-relaxed text-gold-200 shadow-sm">
           IDがわからない場合は議長にお問い合わせください。
         </p>
       </main>
