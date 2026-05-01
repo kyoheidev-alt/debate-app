@@ -29,6 +29,42 @@ export interface Room {
   chair_id: string;
   is_name_visible: boolean;
   likes_enabled: boolean;
+  /**
+   * Per-room override for the maximum number of registered students
+   * (`profiles.room_id = this.id`). When `null`, the effective limit
+   * falls back to `app_settings.default_room_user_limit` (resolved by
+   * the SQL function `effective_room_user_limit(rid)`).
+   */
+  user_limit: number | null;
+  created_at: string;
+}
+
+/**
+ * Singleton row from `app_settings`. Only `app_admin` may UPDATE it.
+ * Every authenticated user can SELECT so chairs can display the current
+ * fallback default while configuring their per-room override.
+ */
+export interface AppSettings {
+  id: true;
+  default_room_user_limit: number;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+/**
+ * A student-submitted report against a single message. Visible only to
+ * `app_admin` (chairs CANNOT read this table — chairs may themselves be
+ * the offender). Inserted directly under RLS by the reporting student.
+ */
+export interface MessageReport {
+  id: string;
+  message_id: string;
+  room_id: string;
+  reporter_id: string;
+  reason: string;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  resolution_note: string | null;
   created_at: string;
 }
 

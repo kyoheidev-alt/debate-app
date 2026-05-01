@@ -39,7 +39,7 @@ export function SettingsForm({
   return (
     <form onSubmit={onSubmit} className="card flex flex-col gap-4">
       <label className="flex flex-col gap-1.5 text-sm">
-        <span className="font-medium text-slate-700">名前（議長機能で表示）</span>
+        <span className="font-medium text-ink">名前（議長機能で表示）</span>
         <input
           type="text"
           required
@@ -51,7 +51,7 @@ export function SettingsForm({
       </label>
 
       <label className="flex flex-col gap-1.5 text-sm">
-        <span className="font-medium text-slate-700">
+        <span className="font-medium text-ink">
           ニックネーム（チャットでの表示名）
         </span>
         <div className="flex gap-2">

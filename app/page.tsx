@@ -20,15 +20,7 @@ export default function Home() {
 
       <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-10">
         <div className="flex flex-1 flex-col items-center justify-center gap-10">
-          <div className="flex flex-col items-center gap-4 text-center">
-            <Brand size="lg" asLink={false} />
-            <p className="heading-serif text-sm tracking-[0.4em] text-gold-500">
-              ANONYMOUS DEBATE ROOM
-            </p>
-            <p className="text-sm text-muted">
-              議長から共有されたルームIDを入力して入室します。
-            </p>
-          </div>
+          <Brand size="lg" asLink={false} />
 
           <div className="w-full max-w-md">
             <div className="card bg-navy-700/90">
@@ -38,6 +30,9 @@ export default function Home() {
         </div>
 
         <footer className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t border-navy-600 pt-6 text-xs text-muted">
+          <Link href="/guide" className="tracking-wide hover:text-gold-500">
+            使い方・操作方法
+          </Link>
           <Link href="/login" className="tracking-wide hover:text-gold-500">
             議長としてログイン
           </Link>

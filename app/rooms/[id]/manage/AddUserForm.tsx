@@ -51,7 +51,7 @@ export function AddUserForm({ roomId }: { roomId: string }) {
   return (
     <form onSubmit={onSubmit} className="grid gap-3 sm:grid-cols-2">
       <label className="flex flex-col gap-1.5 text-sm">
-        <span className="font-medium text-slate-700">ID（必須）</span>
+        <span className="font-medium text-ink">ID（必須）</span>
         <input
           className="input"
           required
@@ -61,7 +61,7 @@ export function AddUserForm({ roomId }: { roomId: string }) {
         />
       </label>
       <label className="flex flex-col gap-1.5 text-sm">
-        <span className="font-medium text-slate-700">名前（必須）</span>
+        <span className="font-medium text-ink">名前（必須）</span>
         <input
           className="input"
           required
@@ -71,7 +71,7 @@ export function AddUserForm({ roomId }: { roomId: string }) {
         />
       </label>
       <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
-        <span className="font-medium text-slate-700">
+        <span className="font-medium text-ink">
           ニックネーム（任意）
         </span>
         <div className="flex gap-2">
@@ -93,7 +93,7 @@ export function AddUserForm({ roomId }: { roomId: string }) {
       </label>
 
       <div className="sm:col-span-2 flex flex-col gap-2">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           一般ユーザーはパスワード不要で入室できます（ID + 本人確認ダイアログ）。
           ニックネームは任意です。未設定なら本人が入室時に必ず設定します（匿名性は入室時に確保）。
         </p>

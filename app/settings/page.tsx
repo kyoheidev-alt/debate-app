@@ -24,13 +24,13 @@ export default async function SettingsPage() {
   const backLabel = isAdmin ? "アプリ管理者ダッシュボード" : "ダッシュボード";
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b bg-white">
+    <div className="min-h-screen bg-navy-900 text-ink">
+      <header className="border-b border-navy-600 bg-navy-800/95">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <Link href={backHref} className="text-lg font-semibold">
+          <Link href={backHref} className="text-lg font-semibold text-ink">
             ← {backLabel}
           </Link>
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-muted">
             {profile.login_id}
             {isAdmin && (
               <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
@@ -42,16 +42,16 @@ export default async function SettingsPage() {
       </header>
 
       <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
-        <h1 className="text-2xl font-bold">プロフィール設定</h1>
+        <h1 className="text-2xl font-bold text-ink">プロフィール設定</h1>
 
         <section className="card flex flex-col gap-2">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted">
             ログインIDは登録時のメールアドレスで固定です。表示名（名前・ニックネーム）のみ変更できます。
           </p>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-            <dt className="text-slate-500">ログインID</dt>
+            <dt className="text-muted">ログインID</dt>
             <dd className="font-mono">{profile.login_id}</dd>
-            <dt className="text-slate-500">ロール</dt>
+            <dt className="text-muted">ロール</dt>
             <dd>{profile.role}</dd>
           </dl>
         </section>

@@ -17,21 +17,23 @@ export function MessageInput({
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit(e?: React.SyntheticEvent) {
+    e?.preventDefault();
     const trimmed = text.trim();
     if (!trimmed) return;
     setSending(true);
     try {
-      await onSend(trimmed);
+      await Promise.resolve(onSend(trimmed));
       setText("");
+    } catch {
+      /* onSend が throw / reject してもここで握って未処理 rejection を避ける（親側でエラー提示している想定） */
     } finally {
       setSending(false);
     }
   }
 
   return (
-    <form onSubmit={submit} className="flex items-end gap-2">
+    <form onSubmit={(e) => void submit(e)} className="flex items-start gap-2">
       <div className="flex-1">
         <textarea
           value={text}
@@ -51,7 +53,7 @@ export function MessageInput({
           className="w-full resize-none rounded-sm border border-navy-600 bg-navy-900/70 px-3 py-2 text-sm text-ink placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-gold-500 disabled:opacity-50"
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-              submit(e as unknown as React.FormEvent);
+              void submit(e);
             }
           }}
         />
@@ -62,7 +64,7 @@ export function MessageInput({
       <button
         type="submit"
         disabled={disabled || sending || text.trim().length === 0}
-        className="btn-primary"
+        className="btn-primary shrink-0"
       >
         送信
       </button>

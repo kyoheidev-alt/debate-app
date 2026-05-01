@@ -120,12 +120,8 @@ export async function confirmEnter(
         kind: "duplicate_entry_attempt",
         payload: { login_id: loginId },
       });
-      const secondsLeft = Math.max(
-        1,
-        Math.ceil((PRESENCE_ACTIVE_WINDOW_MS - ageMs) / 1000),
-      );
       throw new Error(
-        `この学籍番号は既に別の端末で参加中です。先に他の端末で「退出」してから入り直してください（最大 ${secondsLeft} 秒お待ちください）。`,
+        "この学籍番号は既に別の端末で参加中です。先に他の端末で「退出」するか、しばらくしてから再度お試しください。",
       );
     }
   }

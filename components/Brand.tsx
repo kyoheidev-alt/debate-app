@@ -10,10 +10,18 @@ interface BrandProps {
   className?: string;
 }
 
-const dimensions: Record<BrandSize, { w: number; h: number; className: string }> = {
-  sm: { w: 140, h: 40, className: "h-8 w-auto" },
-  md: { w: 220, h: 64, className: "h-12 w-auto" },
-  lg: { w: 420, h: 120, className: "h-24 w-auto" },
+const dimensions: Record<
+  BrandSize,
+  { w: number; h: number; className: string; src: string }
+> = {
+  sm: { w: 40, h: 40, className: "h-8 w-8 rounded-sm", src: "/icon.png" },
+  md: { w: 220, h: 64, className: "h-12 w-auto", src: "/logo.png" },
+  lg: {
+    w: 1120,
+    h: 320,
+    className: "h-48 w-auto max-w-full sm:h-60 md:h-72",
+    src: "/logo.png",
+  },
 };
 
 export function Brand({
@@ -25,7 +33,7 @@ export function Brand({
   const d = dimensions[size];
   const img = (
     <Image
-      src="/logo.png"
+      src={d.src}
       alt="匿名ディベートチャット"
       width={d.w}
       height={d.h}

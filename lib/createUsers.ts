@@ -44,6 +44,20 @@ export async function createUsersForRoom(
   const admin = createAdminClient();
   const out: UserResult[] = [];
 
+  // Resolve the effective per-room cap and the current count once,
+  // then track successful creations locally so we can hard-block as
+  // soon as we'd exceed it. (Service Role bypasses RLS, so any guard
+  // must live here.)
+  const [{ count: currentCount }, { data: effective }] = await Promise.all([
+    admin
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("room_id", roomId),
+    admin.rpc("effective_room_user_limit", { rid: roomId }),
+  ]);
+  const limit = typeof effective === "number" ? effective : 50;
+  let registered = currentCount ?? 0;
+
   for (const row of rows) {
     const login_id = (row.login_id ?? "").trim();
     const providedPw = (row.password ?? "").trim();
@@ -71,6 +85,15 @@ export async function createUsersForRoom(
         login_id,
         ok: false,
         error: "ニックネームは20文字以内で指定してください",
+      });
+      continue;
+    }
+
+    if (registered >= limit) {
+      out.push({
+        login_id,
+        ok: false,
+        error: `このルームの人数上限 (${limit} 名) に達しています`,
       });
       continue;
     }
@@ -136,6 +159,7 @@ export async function createUsersForRoom(
     }
 
     out.push({ login_id, ok: true });
+    registered += 1;
   }
 
   return out;

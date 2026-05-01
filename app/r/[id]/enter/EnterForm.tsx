@@ -7,6 +7,8 @@ import {
   getLoginIdForRoom,
   saveStudentEntry,
 } from "@/lib/studentEntryStorage";
+import { InlineSpinner } from "@/components/InlineSpinner";
+import { isNextRedirectError } from "@/lib/utils";
 
 interface PendingConfirm {
   loginId: string;
@@ -43,6 +45,7 @@ export function EnterForm({ roomId }: { roomId: string }) {
       try {
         result = await attemptEnter(roomId, trimmed);
       } catch (err) {
+        if (isNextRedirectError(err)) return;
         setError(err instanceof Error ? err.message : "通信エラーが発生しました");
         return;
       }
@@ -86,6 +89,7 @@ export function EnterForm({ roomId }: { roomId: string }) {
         await confirmEnter(roomId, confirmTarget.loginId);
         // confirmEnter calls redirect() on success; on error we land here.
       } catch (err) {
+        if (isNextRedirectError(err)) return;
         setError(err instanceof Error ? err.message : "入室に失敗しました");
         setConfirmTarget(null);
       }
@@ -126,9 +130,16 @@ export function EnterForm({ roomId }: { roomId: string }) {
         <button
           type="submit"
           disabled={pending || confirmPending}
-          className="btn-primary"
+          className="btn-primary inline-flex items-center justify-center gap-2"
         >
-          {pending ? "確認中…" : "入室する"}
+          {pending ? (
+            <>
+              <InlineSpinner />
+              <span>確認中…</span>
+            </>
+          ) : (
+            "入室する"
+          )}
         </button>
       </form>
 
@@ -174,9 +185,16 @@ function ConfirmDialog({
             type="button"
             onClick={onYes}
             disabled={pending}
-            className="btn-primary w-full"
+            className="btn-primary inline-flex w-full items-center justify-center gap-2"
           >
-            {pending ? "入室中…" : "はい、入室する"}
+            {pending ? (
+              <>
+                <InlineSpinner />
+                <span>入室中…</span>
+              </>
+            ) : (
+              "はい、入室する"
+            )}
           </button>
           <button
             type="button"

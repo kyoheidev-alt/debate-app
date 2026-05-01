@@ -110,20 +110,20 @@ export function RosterPanel({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted">
           在室中:{" "}
           <span className="text-base font-bold text-pro">{activeCount}</span> 人
         </p>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted">
           ハートビート {Math.round(PRESENCE_HEARTBEAT_INTERVAL_MS / 1000)}秒間隔
           / {Math.round(PRESENCE_ACTIVE_WINDOW_MS / 1000)}秒で「不在」
         </p>
       </div>
 
       {rows.length === 0 ? (
-        <p className="text-sm text-slate-500">現在の在室者はいません。</p>
+        <p className="text-sm text-muted">現在の在室者はいません。</p>
       ) : (
-        <ul className="flex flex-col divide-y rounded-lg border bg-white">
+        <ul className="flex flex-col divide-y divide-navy-600 rounded-lg border border-navy-600 bg-navy-800">
           {rows.map((r) => (
             <li
               key={r.user_id}
@@ -132,18 +132,18 @@ export function RosterPanel({
               <div className="flex items-center gap-2">
                 <span
                   className={`inline-block h-2 w-2 rounded-full ${
-                    r.isActive ? "bg-emerald-500" : "bg-slate-300"
+                    r.isActive ? "bg-emerald-500" : "bg-muted"
                   }`}
                   aria-label={r.isActive ? "在室中" : "切断"}
                 />
                 <span className="font-medium">
                   {r.info?.nickname ?? "(不明)"}
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-muted">
                   {r.info?.login_id}
                 </span>
               </div>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-muted">
                 {r.isActive
                   ? `${Math.max(0, Math.floor(r.ageMs / 1000))}秒前`
                   : "切断"}

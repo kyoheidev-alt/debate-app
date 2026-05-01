@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { createRoom } from "./actions";
+import { isNextRedirectError } from "@/lib/utils";
 
 export function CreateRoomCard() {
   const [theme, setTheme] = useState("");
@@ -17,6 +18,7 @@ export function CreateRoomCard() {
       try {
         await createRoom(fd);
       } catch (err) {
+        if (isNextRedirectError(err)) return;
         setError(err instanceof Error ? err.message : "作成に失敗しました");
       }
     });
@@ -26,7 +28,7 @@ export function CreateRoomCard() {
     <section className="card flex flex-col gap-3">
       <div>
         <h2 className="text-lg font-semibold">新しいルームを作成</h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted">
           作成すると、あなたがそのルームの議長になります。
         </p>
       </div>

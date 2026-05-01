@@ -24,11 +24,13 @@ export default function SignupPage() {
         </div>
       </header>
       <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-12">
-        <h1 className="heading-serif text-2xl text-ink">アカウント作成</h1>
+        <h1 className="text-center text-2xl font-bold text-slate-900">
+          アカウント作成
+        </h1>
         <SignupForm />
-        <p className="text-center text-sm text-muted">
+        <p className="text-center text-sm text-slate-200">
           既にアカウントをお持ちですか？{" "}
-          <Link className="text-gold-500 underline hover:text-gold-400" href="/login">
+          <Link className="font-semibold text-amber-300 underline hover:text-amber-200" href="/login">
             ログイン
           </Link>
         </p>

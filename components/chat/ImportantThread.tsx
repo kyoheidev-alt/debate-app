@@ -426,8 +426,12 @@ function ThreadNode({
                   : "立場を選んでください"
             }
             onSend={async (c) => {
-              await onReply(c, message.id);
-              setShowReply(false);
+              try {
+                await Promise.resolve(onReply(c, message.id));
+                setShowReply(false);
+              } catch {
+                /* MessageInput が reject を握っても、ここで二重に防ぐ */
+              }
             }}
           />
         </div>

@@ -35,6 +35,35 @@ export async function setNameVisibility(roomId: string, visible: boolean) {
   revalidatePath(`/rooms/${roomId}`);
 }
 
+/**
+ * Sets the per-room override for the registered-student cap.
+ * Pass `null` to clear the override and fall back to
+ * `app_settings.default_room_user_limit`.
+ */
+export async function setRoomUserLimit(
+  roomId: string,
+  value: number | null,
+) {
+  const auth = await requireChairOrAppAdmin(roomId);
+  if (auth.kind !== "ok") redirect("/login");
+
+  if (value !== null) {
+    if (!Number.isFinite(value) || value < 1 || value > 10000) {
+      throw new Error("人数は 1〜10000 の整数で指定してください");
+    }
+    value = Math.floor(value);
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("rooms")
+    .update({ user_limit: value })
+    .eq("id", roomId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/rooms/${roomId}/manage`);
+}
+
 export async function setLikesEnabled(roomId: string, enabled: boolean) {
   const auth = await requireChairOrAppAdmin(roomId);
   if (auth.kind !== "ok") redirect("/login");

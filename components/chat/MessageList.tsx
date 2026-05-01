@@ -101,6 +101,7 @@ function MessageRow({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.content);
   const [saving, setSaving] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const isPro = message.stance === "pro";
   const isCon = message.stance === "con";
@@ -177,6 +178,12 @@ function MessageRow({
       ? true
       : false;
   const likeCount = like?.count ?? 0;
+
+  // Reports go directly to app_admin (NOT the chair). We hide the
+  // button on chair / app_admin messages because moderation of those
+  // is not in scope for the report flow (and the chair cannot read
+  // reports anyway).
+  const canReport = !isMine && !isDeleted && message.stance !== "chair";
 
   return (
     <div className={cn("flex w-full", alignWrapper)}>
@@ -294,6 +301,17 @@ function MessageRow({
               )
             )}
 
+            {canReport && (
+              <button
+                type="button"
+                onClick={() => setReportOpen(true)}
+                className="font-medium tracking-wide text-muted hover:text-rose-400"
+                title="この発言をアプリ管理者に通報"
+              >
+                通報
+              </button>
+            )}
+
             {isAdmin && !isDeleted && (
               <>
                 <button
@@ -330,6 +348,128 @@ function MessageRow({
               </>
             )}
           </div>
+        )}
+      </div>
+
+      {reportOpen && (
+        <ReportDialog
+          messageId={message.id}
+          onClose={() => setReportOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ReportDialog({
+  messageId,
+  onClose,
+}: {
+  messageId: string;
+  onClose: () => void;
+}) {
+  const [reason, setReason] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setPending(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message_id: messageId, reason: reason.trim() }),
+      });
+      if (!res.ok) {
+        const json = (await res.json().catch(() => ({}))) as { error?: string };
+        if (res.status === 409) {
+          throw new Error("この発言はすでに通報済みです");
+        }
+        throw new Error(json.error ?? "通報に失敗しました");
+      }
+      setDone(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "通報に失敗しました");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <h2 className="text-lg font-semibold text-slate-900">
+          この発言を通報
+        </h2>
+        <p className="mt-1 text-sm text-slate-600">
+          通報内容は<strong>アプリ管理者のみ</strong>に届きます（議長には共有されません）。
+          危険な発言・誹謗中傷・個人情報の暴露などにご利用ください。
+        </p>
+
+        {done ? (
+          <div className="mt-4 flex flex-col gap-3">
+            <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+              通報を受け付けました。アプリ管理者が確認します。
+            </p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-primary w-full"
+            >
+              閉じる
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="mt-4 flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">
+                理由（任意・最大500文字）
+              </span>
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                rows={4}
+                maxLength={500}
+                disabled={pending}
+                placeholder="どこが問題かを簡潔に書くと管理者の判断が早まります（空欄でも送信できます）"
+                className="resize-none rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-400 disabled:opacity-60"
+              />
+              <span className="text-right text-xs text-slate-400">
+                {reason.length} / 500
+              </span>
+            </label>
+
+            {error && (
+              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error}
+              </p>
+            )}
+
+            <div className="mt-1 flex flex-col gap-2">
+              <button
+                type="submit"
+                disabled={pending}
+                className="rounded-md bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-500 disabled:opacity-60"
+              >
+                {pending ? "送信中…" : "通報する"}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={pending}
+                className="btn-secondary w-full"
+              >
+                キャンセル
+              </button>
+            </div>
+          </form>
         )}
       </div>
     </div>

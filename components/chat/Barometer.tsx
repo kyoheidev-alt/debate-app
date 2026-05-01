@@ -2,16 +2,64 @@
 
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 
+function computeProConPct(pro: number, con: number) {
+  const total = pro + con;
+  const proPct = total > 0 ? Math.round((pro / total) * 100) : 50;
+  const conPct = total > 0 ? 100 - proPct : 50;
+  return { total, proPct, conPct };
+}
+
 /**
  * Half-pie barometer that mimics an election-night gauge.
  * Pro fills from the left (blue), Con from the right (red).
  */
-export function Barometer({ pro, con }: { pro: number; con: number }) {
-  const total = pro + con;
-  const proPct = total > 0 ? Math.round((pro / total) * 100) : 50;
-  const conPct = total > 0 ? 100 - proPct : 50;
+export function Barometer({
+  pro,
+  con,
+  variant = "default",
+}: {
+  pro: number;
+  con: number;
+  variant?: "default" | "compact";
+}) {
+  const { total, proPct, conPct } = computeProConPct(pro, con);
 
-  // When there are zero votes show a neutral 50/50 gauge.
+  if (variant === "compact") {
+    const wPro = total > 0 ? proPct : 50;
+    const wCon = total > 0 ? conPct : 50;
+    return (
+      <div className="flex w-full flex-col gap-2 py-0.5">
+        <div className="flex items-center justify-between gap-2 text-[11px] sm:text-xs">
+          <div className="min-w-0 text-left">
+            <span className="font-bold text-pro-light">賛成</span>
+            <span className="text-muted">
+              {" "}
+              {pro}人 ({proPct}%)
+            </span>
+          </div>
+          <span className="heading-serif shrink-0 text-base font-bold text-ink sm:text-lg">
+            {pro}:{con}
+          </span>
+          <div className="min-w-0 text-right">
+            <span className="font-bold text-con-light">反対</span>
+            <span className="text-muted">
+              {" "}
+              {con}人 ({conPct}%)
+            </span>
+          </div>
+        </div>
+        <div
+          className="flex h-3 w-full overflow-hidden rounded-sm ring-1 ring-navy-600"
+          role="img"
+          aria-label={`賛成${proPct}パーセント、反対${conPct}パーセント`}
+        >
+          <div className="h-full bg-pro" style={{ width: `${wPro}%` }} />
+          <div className="h-full bg-con" style={{ width: `${wCon}%` }} />
+        </div>
+      </div>
+    );
+  }
+
   const data =
     total > 0
       ? [

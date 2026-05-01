@@ -146,7 +146,7 @@ export function NotificationBell({ roomId }: { roomId: string }) {
           type="button"
           onClick={toggleOpen}
           aria-label="通知を表示"
-          className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:border-pro hover:text-pro"
+          className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-navy-600 bg-navy-700 text-ink hover:border-gold-500 hover:text-gold-500"
         >
           <BellIcon />
           {unreadCount > 0 && (
@@ -157,16 +157,16 @@ export function NotificationBell({ roomId }: { roomId: string }) {
         </button>
 
         {open && (
-          <div className="absolute right-0 z-40 mt-2 w-80 max-w-[90vw] origin-top-right rounded-xl border border-slate-200 bg-white shadow-lg">
+          <div className="absolute right-0 z-40 mt-2 w-80 max-w-[90vw] origin-top-right rounded-xl border border-navy-600 bg-navy-700 text-ink shadow-lg">
             <div className="flex items-center justify-between border-b px-4 py-2">
               <span className="text-sm font-semibold">通知</span>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-muted">
                 入室試行 / 重複入室
               </span>
             </div>
             <div className="max-h-80 overflow-y-auto">
               {items.length === 0 && (
-                <p className="px-4 py-6 text-center text-sm text-slate-500">
+                <p className="px-4 py-6 text-center text-sm text-muted">
                   通知はありません
                 </p>
               )}
@@ -233,21 +233,21 @@ function NotificationItem({
 
   return (
     <div
-      className={`flex flex-col gap-2 border-b px-4 py-3 text-sm ${
-        notif.read_at ? "bg-white" : "bg-amber-50/40"
+      className={`flex flex-col gap-2 border-b border-navy-600 px-4 py-3 text-sm ${
+        notif.read_at ? "bg-navy-700" : "bg-navy-800"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-col">
-          <span className="font-medium text-slate-700">
-            ID <span className="font-mono text-slate-900">{loginId}</span>{" "}
+          <span className="font-medium text-ink">
+            ID <span className="font-mono text-gold-400">{loginId}</span>{" "}
             {isDuplicate
               ? "が別の端末から重複入室を試みました"
               : "が入室を試みました"}
           </span>
-          <span className="text-xs text-slate-400">{dtLabel}</span>
+          <span className="text-xs text-muted">{dtLabel}</span>
           {reason === "not_member" && (
-            <span className="mt-0.5 text-xs text-slate-500">
+            <span className="mt-0.5 text-xs text-muted">
               （別ルームに登録済み）
             </span>
           )}
@@ -263,7 +263,7 @@ function NotificationItem({
           <button
             type="button"
             onClick={onMarkRead}
-            className="text-xs text-slate-500 hover:underline"
+            className="text-xs text-muted hover:text-gold-500 hover:underline"
           >
             既読
           </button>
@@ -334,15 +334,15 @@ function RegisterFromNotificationDialog({
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+      <div className="w-full max-w-sm rounded-2xl border border-navy-600 bg-navy-700 p-6 text-ink shadow-xl">
         <h2 className="text-lg font-semibold">このIDをルームに登録</h2>
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-2 text-sm text-muted">
           ID <span className="font-mono">{loginId}</span> を本ルームの参加者として登録します。
         </p>
 
         <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-3">
           <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium text-slate-700">名前（必須）</span>
+            <span className="font-medium text-ink">名前（必須）</span>
             <input
               className="input"
               required
@@ -353,7 +353,7 @@ function RegisterFromNotificationDialog({
             />
           </label>
           <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium text-slate-700">
+            <span className="font-medium text-ink">
               ニックネーム（任意 / 本人がSTEP3で再設定可）
             </span>
             <input

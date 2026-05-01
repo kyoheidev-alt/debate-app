@@ -46,16 +46,16 @@ export default async function DashboardPage() {
   const currentRoom = currentRoomRes.data;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b bg-white">
+    <div className="min-h-screen bg-navy-900 text-ink">
+      <header className="border-b border-navy-600 bg-navy-800/95">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Link href="/dashboard" className="text-lg font-semibold">
+          <Link href="/dashboard" className="text-lg font-semibold text-ink">
             ダッシュボード
           </Link>
           <div className="flex items-center gap-3 text-sm">
-            <span className="text-slate-600">
+            <span className="text-ink">
               {profile.nickname}
-              <span className="ml-1 text-xs text-slate-400">
+              <span className="ml-1 text-xs text-muted">
                 ({profile.login_id})
               </span>
             </span>
@@ -74,12 +74,12 @@ export default async function DashboardPage() {
       <main className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
         {/* 現在参加中のルーム */}
         <section className="card flex flex-col gap-3">
-          <h2 className="text-lg font-semibold">現在参加中のルーム</h2>
+          <h2 className="text-lg font-semibold text-ink">現在参加中のルーム</h2>
           {currentRoom ? (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-semibold">{currentRoom.theme}</p>
-                <p className="font-mono text-xs text-slate-500">
+                <p className="font-mono text-xs text-muted">
                   ID: {currentRoom.id}
                 </p>
               </div>
@@ -91,7 +91,7 @@ export default async function DashboardPage() {
               </Link>
             </div>
           ) : (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted">
               現在どのルームにも参加していません。下から参加するか、ルームを作成してください。
             </p>
           )}
@@ -105,9 +105,9 @@ export default async function DashboardPage() {
 
         {/* 議長として作成したルーム一覧 */}
         <section className="flex flex-col gap-3">
-          <h2 className="text-lg font-semibold">あなたが議長のルーム</h2>
+          <h2 className="text-lg font-semibold text-ink">あなたが議長のルーム</h2>
           {chairRooms.length === 0 ? (
-            <p className="rounded-lg bg-white p-4 text-sm text-slate-500 shadow-sm">
+            <p className="rounded-sm border border-navy-600 bg-navy-700 p-4 text-sm text-muted shadow-md">
               まだ議長を務めるルームはありません。
             </p>
           ) : (
@@ -119,10 +119,10 @@ export default async function DashboardPage() {
                 >
                   <div>
                     <p className="font-semibold">{room.theme}</p>
-                    <p className="font-mono text-xs text-slate-500">
+                    <p className="font-mono text-xs text-muted">
                       ID: {room.id}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted">
                       実名表示: {room.is_name_visible ? "ON" : "OFF"}
                     </p>
                   </div>

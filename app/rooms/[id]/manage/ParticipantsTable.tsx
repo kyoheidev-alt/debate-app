@@ -39,14 +39,14 @@ export function ParticipantsTable({
   }
 
   if (participants.length === 0) {
-    return <p className="text-sm text-slate-500">まだ参加者はいません。</p>;
+    return <p className="text-sm text-muted">まだ参加者はいません。</p>;
   }
 
   return (
     <div className="flex flex-col gap-2">
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-100 text-left">
+          <thead className="bg-navy-800 text-left text-ink">
             <tr>
               <th className="px-3 py-2">ニックネーム</th>
               <th className="px-3 py-2">名前</th>
@@ -57,16 +57,16 @@ export function ParticipantsTable({
           </thead>
           <tbody>
             {participants.map((p) => (
-              <tr key={p.id} className="border-b last:border-0">
+              <tr key={p.id} className="border-b border-navy-600 last:border-0">
                 <td className="px-3 py-2 font-medium">{p.nickname}</td>
                 <td className="px-3 py-2">{p.name}</td>
                 <td className="px-3 py-2">{p.login_id}</td>
-                <td className="px-3 py-2 font-mono text-xs text-slate-500">
+                <td className="px-3 py-2 font-mono text-xs text-muted">
                   {p.id}
                 </td>
                 <td className="px-3 py-2">
                   {p.role === "app_admin" ? (
-                    <span className="text-xs text-slate-500">アプリ管理者</span>
+                    <span className="text-xs text-muted">アプリ管理者</span>
                   ) : (
                     <button
                       onClick={() => onKick(p.id, p.nickname)}

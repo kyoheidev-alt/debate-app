@@ -58,11 +58,21 @@ export function ChatRoom({
   const [likes, setLikes] = useState<Record<string, LikeState>>({});
   const [loading, setLoading] = useState(true);
   const [leaving, setLeaving] = useState(false);
+  const [mobileImportantOpen, setMobileImportantOpen] = useState(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   // Moderator (chair of this room or any app_admin) posts neutral
   // messages with stance='chair' and never picks pro/con.
   const isModerator = isChair || isAppAdmin;
+
+  useEffect(() => {
+    if (!mobileImportantOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileImportantOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileImportantOpen]);
 
   // Initial fetch
   useEffect(() => {
@@ -223,20 +233,25 @@ export function ChatRoom({
     async (next: Stance) => {
       const prev = myStance;
       setMyStance(next);
-      const { error } = await supabase
-        .from("stances")
-        .upsert(
-          {
-            user_id: me.id,
-            room_id: room.id,
-            stance: next,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id,room_id" },
-        );
-      if (error) {
+      try {
+        const { error } = await supabase
+          .from("stances")
+          .upsert(
+            {
+              user_id: me.id,
+              room_id: room.id,
+              stance: next,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,room_id" },
+          );
+        if (error) {
+          setMyStance(prev);
+          alert("立場の更新に失敗しました: " + error.message);
+        }
+      } catch {
         setMyStance(prev);
-        alert("立場の更新に失敗しました: " + error.message);
+        alert("立場の更新に失敗しました。");
       }
     },
     [supabase, me.id, room.id, myStance],
@@ -315,25 +330,33 @@ export function ChatRoom({
         }
         stanceToSend = myStance;
       }
-      const { error } = await supabase.from("messages").insert({
-        room_id: room.id,
-        user_id: me.id,
-        content,
-        stance: stanceToSend,
-        parent_id: parentId,
-      });
-      if (error) alert("送信に失敗しました: " + error.message);
+      try {
+        const { error } = await supabase.from("messages").insert({
+          room_id: room.id,
+          user_id: me.id,
+          content,
+          stance: stanceToSend,
+          parent_id: parentId,
+        });
+        if (error) alert("送信に失敗しました: " + error.message);
+      } catch {
+        alert("送信に失敗しました。");
+      }
     },
     [supabase, me.id, room.id, myStance, isModerator],
   );
 
   const toggleImportant = useCallback(
     async (messageId: string, next: boolean) => {
-      const { error } = await supabase
-        .from("messages")
-        .update({ is_important: next })
-        .eq("id", messageId);
-      if (error) alert("更新に失敗しました: " + error.message);
+      try {
+        const { error } = await supabase
+          .from("messages")
+          .update({ is_important: next })
+          .eq("id", messageId);
+        if (error) alert("更新に失敗しました: " + error.message);
+      } catch {
+        alert("更新に失敗しました。");
+      }
     },
     [supabase],
   );
@@ -350,24 +373,29 @@ export function ChatRoom({
           likedByMe: !cur.likedByMe,
         },
       }));
-      if (cur.likedByMe) {
-        const { error } = await supabase
-          .from("message_likes")
-          .delete()
-          .eq("message_id", messageId)
-          .eq("user_id", me.id);
-        if (error) {
-          setLikes((prev) => ({ ...prev, [messageId]: cur }));
-          alert("いいねの解除に失敗しました: " + error.message);
+      try {
+        if (cur.likedByMe) {
+          const { error } = await supabase
+            .from("message_likes")
+            .delete()
+            .eq("message_id", messageId)
+            .eq("user_id", me.id);
+          if (error) {
+            setLikes((prev) => ({ ...prev, [messageId]: cur }));
+            alert("いいねの解除に失敗しました: " + error.message);
+          }
+        } else {
+          const { error } = await supabase
+            .from("message_likes")
+            .insert({ message_id: messageId, user_id: me.id });
+          if (error) {
+            setLikes((prev) => ({ ...prev, [messageId]: cur }));
+            alert("いいねに失敗しました: " + error.message);
+          }
         }
-      } else {
-        const { error } = await supabase
-          .from("message_likes")
-          .insert({ message_id: messageId, user_id: me.id });
-        if (error) {
-          setLikes((prev) => ({ ...prev, [messageId]: cur }));
-          alert("いいねに失敗しました: " + error.message);
-        }
+      } catch {
+        setLikes((prev) => ({ ...prev, [messageId]: cur }));
+        alert("いいねの更新に失敗しました。");
       }
     },
     [supabase, room.likes_enabled, me.id, likes],
@@ -422,7 +450,7 @@ export function ChatRoom({
         />
         <div className="absolute inset-0 bg-navy-900/85 backdrop-blur-[2px]" />
       </div>
-      <header className="border-b border-navy-600/60 bg-navy-800/90 backdrop-blur-sm">
+      <header className="border-b border-navy-600/60 bg-navy-800/75 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-3">
           <div className="flex min-w-0 flex-1 items-center gap-4">
             <Brand size="sm" className="shrink-0" />
@@ -478,116 +506,270 @@ export function ChatRoom({
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 gap-4 overflow-hidden p-4 lg:grid-cols-[280px_1fr_360px]">
-        {/* 左: バロメーター */}
-        <aside className="card flex flex-col gap-4 overflow-y-auto">
-          <h2 className="heading-serif text-sm uppercase tracking-[0.2em] text-gold-500">
-            賛成 vs 反対
-          </h2>
-          <Barometer pro={proCount} con={conCount} />
-          {isModerator ? (
-            <div className="flex flex-col gap-2 rounded-sm border border-chair/50 bg-chair/15 p-3">
-              <p className="text-sm font-semibold text-chair-light">
-                {isChair ? "議長として参加中" : "アプリ管理者として参加中"}
-              </p>
-              <p className="text-xs text-muted">
-                立場（賛成 / 反対）を選ばずに中立の発言ができます。投稿は紫色で中央に表示されます。
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-semibold uppercase tracking-wide text-muted">
-                あなたの立場
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setStance("pro")}
-                  className={`flex-1 rounded-sm border px-3 py-2 font-semibold tracking-wide transition ${
-                    myStance === "pro"
-                      ? "border-pro bg-pro text-white"
-                      : "border-navy-600 bg-navy-800/60 text-ink hover:border-pro"
-                  }`}
-                >
-                  賛成
-                </button>
-                <button
-                  onClick={() => setStance("con")}
-                  className={`flex-1 rounded-sm border px-3 py-2 font-semibold tracking-wide transition ${
-                    myStance === "con"
-                      ? "border-con bg-con text-white"
-                      : "border-navy-600 bg-navy-800/60 text-ink hover:border-con"
-                  }`}
-                >
-                  反対
-                </button>
-              </div>
-              {!myStance && (
-                <p className="text-xs text-muted">
-                  発言する前に立場を選んでください。
-                </p>
-              )}
-            </div>
-          )}
-        </aside>
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-hidden px-3 pb-2 pt-0 lg:grid lg:grid-cols-[280px_1fr_360px] lg:gap-4 lg:p-4">
+          {/* モバイル: ヘッダー直下の賛否ゲージ帯 */}
+          <div className="shrink-0 border-b border-navy-600/80 bg-navy-800/60 px-2 py-2 backdrop-blur-sm lg:hidden">
+            <h2 className="sr-only">賛成 vs 反対</h2>
+            <Barometer pro={proCount} con={conCount} variant="compact" />
+          </div>
 
-        {/* 中央: チャット */}
-        <section className="card flex min-h-0 flex-col overflow-hidden p-0">
-          <div className="flex-1 overflow-y-auto p-4">
-            {loading ? (
-              <p className="text-center text-sm text-muted">読み込み中…</p>
+          {/* 左: バロメーター（デスクトップのみ） */}
+          <aside className="card hidden min-h-0 flex-col gap-4 overflow-y-auto bg-navy-700/75 backdrop-blur-sm lg:flex">
+            <h2 className="heading-serif text-center text-sm uppercase tracking-[0.2em] text-gold-500">
+              賛成 vs 反対
+            </h2>
+            <Barometer pro={proCount} con={conCount} />
+            {isModerator ? (
+              <div className="flex flex-col gap-2 rounded-sm border border-chair/50 bg-chair/15 p-3">
+                <p className="text-sm font-semibold text-chair-light">
+                  {isChair ? "議長として参加中" : "アプリ管理者として参加中"}
+                </p>
+                <p className="text-xs text-muted">
+                  立場（賛成 / 反対）を選ばずに中立の発言ができます。投稿は紫色で中央に表示されます。
+                </p>
+              </div>
             ) : (
-              <MessageList
-                messages={rootMessages}
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-semibold uppercase tracking-wide text-muted">
+                  あなたの立場
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStance("pro")}
+                    className={`flex-1 rounded-sm border px-3 py-2 font-semibold tracking-wide transition ${
+                      myStance === "pro"
+                        ? "border-pro bg-pro text-white"
+                        : "border-navy-600 bg-navy-800/60 text-ink hover:border-pro"
+                    }`}
+                  >
+                    賛成
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStance("con")}
+                    className={`flex-1 rounded-sm border px-3 py-2 font-semibold tracking-wide transition ${
+                      myStance === "con"
+                        ? "border-con bg-con text-white"
+                        : "border-navy-600 bg-navy-800/60 text-ink hover:border-con"
+                    }`}
+                  >
+                    反対
+                  </button>
+                </div>
+                {!myStance && (
+                  <p className="text-xs text-muted">
+                    発言する前に立場を選んでください。
+                  </p>
+                )}
+              </div>
+            )}
+          </aside>
+
+          {/* 中央: チャット */}
+          <section className="card flex min-h-0 flex-1 flex-col overflow-hidden bg-navy-700/75 p-0 backdrop-blur-sm lg:min-h-0">
+            {/* モバイル: 上部タブでチャット／重要を切り替え（ドロワー不使用） */}
+            <div
+              className="flex shrink-0 border-b border-navy-600 lg:hidden"
+              role="tablist"
+              aria-label="表示の切り替え"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={!mobileImportantOpen}
+                id="mobile-tab-chat"
+                aria-controls="mobile-chat-panel"
+                onClick={() => setMobileImportantOpen(false)}
+                className={`flex-1 px-3 py-2.5 text-sm font-semibold tracking-wide transition ${
+                  !mobileImportantOpen
+                    ? "border-b-2 border-gold-500 bg-navy-800/50 text-gold-500"
+                    : "text-muted hover:text-ink"
+                }`}
+              >
+                チャット
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mobileImportantOpen}
+                id="mobile-tab-important"
+                aria-controls="mobile-important-panel"
+                onClick={() => setMobileImportantOpen(true)}
+                className={`flex-1 px-3 py-2.5 text-sm font-semibold tracking-wide transition ${
+                  mobileImportantOpen
+                    ? "border-b-2 border-gold-500 bg-navy-800/50 text-gold-500"
+                    : "text-muted hover:text-ink"
+                }`}
+              >
+                重要
+              </button>
+            </div>
+
+            {/* メインチャット（デスクトップ常時／モバイルはチャットタブ時のみ） */}
+            <div
+              id="mobile-chat-panel"
+              role="tabpanel"
+              aria-labelledby="mobile-tab-chat"
+              className={
+                mobileImportantOpen
+                  ? "hidden min-h-0 flex-1 flex-col overflow-hidden lg:flex"
+                  : "flex min-h-0 flex-1 flex-col overflow-hidden"
+              }
+            >
+              <div className="flex-1 overflow-y-auto p-4">
+                {loading ? (
+                  <p className="text-center text-sm text-muted">読み込み中…</p>
+                ) : (
+                  <MessageList
+                    messages={rootMessages}
+                    profiles={profiles}
+                    meId={me.id}
+                    isAdmin={canModerate}
+                    isNameVisible={room.is_name_visible}
+                    likesEnabled={room.likes_enabled}
+                    likes={likes}
+                    onToggleLike={toggleLike}
+                    onToggleImportant={toggleImportant}
+                    onEdit={onEditMessage}
+                    onDelete={onDeleteMessage}
+                  />
+                )}
+              </div>
+              {/* モバイル: 立場（学生）または議長説明 — 入力の直上に常時表示 */}
+              <div className="shrink-0 border-t border-navy-600 bg-navy-800/50 px-3 py-2 backdrop-blur-sm lg:hidden">
+                {isModerator ? (
+                  <div className="flex flex-col gap-1 rounded-sm border border-chair/50 bg-chair/15 p-2">
+                    <p className="text-xs font-semibold text-chair-light">
+                      {isChair
+                        ? "議長として参加中"
+                        : "アプリ管理者として参加中"}
+                    </p>
+                    <p className="text-[11px] leading-snug text-muted">
+                      賛成/反対を選ばず中立の発言ができます（中央・紫色）。
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                      あなたの立場
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setStance("pro")}
+                        className={`flex-1 rounded-sm border px-3 py-2 text-sm font-semibold tracking-wide transition ${
+                          myStance === "pro"
+                            ? "border-pro bg-pro text-white"
+                            : "border-navy-600 bg-navy-800/60 text-ink hover:border-pro"
+                        }`}
+                      >
+                        賛成
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStance("con")}
+                        className={`flex-1 rounded-sm border px-3 py-2 text-sm font-semibold tracking-wide transition ${
+                          myStance === "con"
+                            ? "border-con bg-con text-white"
+                            : "border-navy-600 bg-navy-800/60 text-ink hover:border-con"
+                        }`}
+                      >
+                        反対
+                      </button>
+                    </div>
+                    {!myStance && (
+                      <p className="text-[11px] text-muted">
+                        発言する前に立場を選んでください。
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-navy-600 bg-navy-800/65 p-3 backdrop-blur-sm">
+                <MessageInput
+                  disabled={!isModerator && !myStance}
+                  stance={isModerator ? "chair" : myStance}
+                  onSend={(c) => sendMessage(c, null)}
+                />
+              </div>
+            </div>
+
+            {/* モバイル専用: 重要タブの内容（同一カード内で切り替え） */}
+            <div
+              id="mobile-important-panel"
+              role="tabpanel"
+              aria-labelledby="mobile-tab-important"
+              className={
+                mobileImportantOpen
+                  ? "flex min-h-0 flex-1 flex-col overflow-hidden lg:hidden"
+                  : "hidden"
+              }
+            >
+              <div className="shrink-0 border-b border-navy-600 px-3 py-2">
+                <h2 className="heading-serif text-sm text-gold-500">
+                  重要意見
+                </h2>
+                <p className="mt-0.5 text-xs text-muted">
+                  議長がピックアップした意見と、それに対する議論ツリー
+                </p>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto p-3">
+                <ImportantThread
+                  roots={importantRoots}
+                  childrenByParent={childrenByParent}
+                  profiles={profiles}
+                  meId={me.id}
+                  isAdmin={canModerate}
+                  isModerator={isModerator}
+                  isNameVisible={room.is_name_visible}
+                  myStance={myStance}
+                  likesEnabled={room.likes_enabled}
+                  likes={likes}
+                  onToggleLike={toggleLike}
+                  onReply={(content, parentId) =>
+                    sendMessage(content, parentId)
+                  }
+                  onToggleImportant={toggleImportant}
+                  onEdit={onEditMessage}
+                  onDelete={onDeleteMessage}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* 右: 重要意見（デスクトップのみ） */}
+          <aside className="card hidden min-h-0 flex-col overflow-hidden bg-navy-700/75 p-0 backdrop-blur-sm lg:flex">
+            <div className="border-b border-navy-600 px-4 py-3">
+              <h2 className="heading-serif text-ink">重要意見</h2>
+              <p className="text-xs text-muted">
+                議長がピックアップした意見と、それに対する議論ツリー
+              </p>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-3">
+              <ImportantThread
+                roots={importantRoots}
+                childrenByParent={childrenByParent}
                 profiles={profiles}
                 meId={me.id}
                 isAdmin={canModerate}
+                isModerator={isModerator}
                 isNameVisible={room.is_name_visible}
+                myStance={myStance}
                 likesEnabled={room.likes_enabled}
                 likes={likes}
                 onToggleLike={toggleLike}
+                onReply={(content, parentId) =>
+                  sendMessage(content, parentId)
+                }
                 onToggleImportant={toggleImportant}
                 onEdit={onEditMessage}
                 onDelete={onDeleteMessage}
               />
-            )}
-          </div>
-          <div className="border-t border-navy-600 bg-navy-800/60 p-3">
-            <MessageInput
-              disabled={!isModerator && !myStance}
-              stance={isModerator ? "chair" : myStance}
-              onSend={(c) => sendMessage(c, null)}
-            />
-          </div>
-        </section>
-
-        {/* 右: 重要意見 */}
-        <aside className="card flex min-h-0 flex-col overflow-hidden p-0">
-          <div className="border-b border-navy-600 px-4 py-3">
-            <h2 className="heading-serif text-ink">重要意見</h2>
-            <p className="text-xs text-muted">
-              議長がピックアップした意見と、それに対する議論ツリー
-            </p>
-          </div>
-          <div className="flex-1 overflow-y-auto p-3">
-            <ImportantThread
-              roots={importantRoots}
-              childrenByParent={childrenByParent}
-              profiles={profiles}
-              meId={me.id}
-              isAdmin={canModerate}
-              isModerator={isModerator}
-              isNameVisible={room.is_name_visible}
-              myStance={myStance}
-              likesEnabled={room.likes_enabled}
-              likes={likes}
-              onToggleLike={toggleLike}
-              onReply={(content, parentId) => sendMessage(content, parentId)}
-              onToggleImportant={toggleImportant}
-              onEdit={onEditMessage}
-              onDelete={onDeleteMessage}
-            />
-          </div>
-        </aside>
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   );

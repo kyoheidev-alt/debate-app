@@ -9,7 +9,9 @@ export default function LoginPage() {
   // useSearchParams() forces CSR bailout; wrap in Suspense so the rest
   // of the page can prerender.
   return (
-    <Suspense fallback={<h1 className="heading-serif text-2xl text-ink">議長ログイン</h1>}>
+    <Suspense
+      fallback={<h1 className="text-center text-2xl font-bold text-slate-900">議長ログイン</h1>}
+    >
       <LoginForm />
     </Suspense>
   );
@@ -80,7 +82,7 @@ function LoginForm() {
 
   return (
     <>
-      <h1 className="heading-serif text-2xl text-ink">議長ログイン</h1>
+      <h1 className="text-center text-2xl font-bold text-slate-900">議長ログイン</h1>
 
       {!resetMode ? (
         <form onSubmit={onSubmit} className="card flex flex-col gap-4">
@@ -183,7 +185,10 @@ function LoginForm() {
 
       <p className="text-center text-sm text-muted">
         アカウントが無い方は{" "}
-        <Link className="text-gold-500 underline hover:text-gold-400" href="/signup">
+        <Link
+          className="font-semibold text-amber-300 underline hover:text-amber-200"
+          href="/signup"
+        >
           こちらから登録
         </Link>
       </p>

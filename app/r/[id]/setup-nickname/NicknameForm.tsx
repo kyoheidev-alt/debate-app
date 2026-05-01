@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { generateNickname } from "@/lib/utils";
+import { InlineSpinner } from "@/components/InlineSpinner";
+import { generateNickname, isNextRedirectError } from "@/lib/utils";
 import { saveNickname } from "./actions";
 
 export function NicknameForm({
@@ -23,6 +24,7 @@ export function NicknameForm({
         await saveNickname(roomId, nickname);
         // On success the action redirects to /rooms/[id].
       } catch (err) {
+        if (isNextRedirectError(err)) return;
         setError(err instanceof Error ? err.message : "保存に失敗しました");
       }
     });
@@ -62,8 +64,19 @@ export function NicknameForm({
         </p>
       )}
 
-      <button type="submit" disabled={pending} className="btn-primary">
-        {pending ? "保存中…" : "決定してチャットに入る"}
+      <button
+        type="submit"
+        disabled={pending}
+        className="btn-primary inline-flex items-center justify-center gap-2"
+      >
+        {pending ? (
+          <>
+            <InlineSpinner />
+            <span>保存して入室中…</span>
+          </>
+        ) : (
+          "決定してチャットに入る"
+        )}
       </button>
     </form>
   );

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { joinRoom } from "./actions";
+import { isNextRedirectError } from "@/lib/utils";
 
 export function JoinRoomCard() {
   const [roomId, setRoomId] = useState("");
@@ -17,6 +18,7 @@ export function JoinRoomCard() {
       try {
         await joinRoom(fd);
       } catch (err) {
+        if (isNextRedirectError(err)) return;
         setError(err instanceof Error ? err.message : "参加に失敗しました");
       }
     });
@@ -26,7 +28,7 @@ export function JoinRoomCard() {
     <section className="card flex flex-col gap-3">
       <div>
         <h2 className="text-lg font-semibold">既存のルームに参加</h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted">
           議長から共有されたルーム ID を入力します。現在所属中のルームからは自動で抜けます。
         </p>
       </div>
