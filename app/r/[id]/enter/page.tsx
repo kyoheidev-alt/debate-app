@@ -24,7 +24,7 @@ export default async function RoomEnterPage({
 
   const { data: chair } = await admin
     .from("profiles")
-    .select("name, nickname")
+    .select("nickname")
     .eq("id", room.chair_id)
     .maybeSingle();
 
@@ -57,7 +57,7 @@ export default async function RoomEnterPage({
       <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-10">
         <section className="card flex flex-col gap-2">
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-gold-500">
-            Debate Room
+            ディベートルーム
           </p>
           <div className="gold-accent">
             <h1 className="heading-serif text-xl leading-snug text-ink">
@@ -66,16 +66,18 @@ export default async function RoomEnterPage({
           </div>
           {chair && (
             <p className="text-sm text-muted">
-              議長: <span className="font-medium text-ink">{chair.name}</span>
+              議長: <span className="font-medium text-ink">{chair.nickname}</span>
             </p>
           )}
-          <p className="font-mono text-[11px] text-muted/80">ID: {room.id}</p>
+          <p className="text-sm text-muted">
+            チャットではニックネームで表示されます。本名は出ません。
+          </p>
         </section>
 
         <EnterForm roomId={room.id} />
 
         <p className="rounded-md border border-gold-500/35 bg-navy-900/80 px-4 py-3 text-center text-xs leading-relaxed text-gold-200 shadow-sm">
-          IDがわからない場合は議長にお問い合わせください。
+          IDがわからない場合は、議長に Teams で聞いてください。
         </p>
       </main>
     </div>

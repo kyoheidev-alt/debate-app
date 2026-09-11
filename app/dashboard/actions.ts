@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { extractRoomId } from "@/lib/roomId";
 import { createClient } from "@/lib/supabase/server";
 import { isChairCapableAccount } from "@/lib/supabase/types";
 
@@ -41,9 +42,11 @@ export async function createRoom(formData: FormData) {
 }
 
 export async function joinRoom(formData: FormData) {
-  const roomId = String(formData.get("room_id") ?? "").trim();
+  const roomId = extractRoomId(String(formData.get("room_id") ?? ""));
   if (!roomId) {
-    throw new Error("ルーム ID を入力してください。");
+    throw new Error(
+      "ルームIDが見つかりません。招待リンクをそのまま貼るか、IDを入力してください。",
+    );
   }
 
   const supabase = await createClient();

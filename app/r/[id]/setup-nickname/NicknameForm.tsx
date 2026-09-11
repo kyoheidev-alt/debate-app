@@ -22,7 +22,6 @@ export function NicknameForm({
     startTransition(async () => {
       try {
         await saveNickname(roomId, nickname);
-        // On success the action redirects to /rooms/[id].
       } catch (err) {
         if (isNextRedirectError(err)) return;
         setError(err instanceof Error ? err.message : "保存に失敗しました");
@@ -36,6 +35,9 @@ export function NicknameForm({
         <span className="font-medium tracking-wide text-ink">
           ニックネーム（20文字以内）
         </span>
+        <p className="text-xs text-muted">
+          チャットに出る名前です。本名や学籍番号は使わないでください。
+        </p>
         <div className="flex gap-2">
           <input
             type="text"

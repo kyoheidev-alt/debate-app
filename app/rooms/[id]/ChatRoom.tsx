@@ -11,7 +11,6 @@ import type {
   Message,
   MessageLike,
   MessageStance,
-  Profile,
   Room,
   Stance,
   StanceRow,
@@ -20,6 +19,11 @@ import {
   PRESENCE_HEARTBEAT_INTERVAL_MS,
   isChairCapableAccount,
 } from "@/lib/supabase/types";
+import {
+  profileSelectColumns,
+  toPublicChatProfile,
+  type PublicChatProfile,
+} from "@/lib/identity";
 import { Barometer } from "@/components/chat/Barometer";
 import { MessageList, type LikeState } from "@/components/chat/MessageList";
 import { MessageInput } from "@/components/chat/MessageInput";
@@ -32,10 +36,8 @@ type RoomLite = Pick<
   Room,
   "id" | "theme" | "is_name_visible" | "chair_id" | "likes_enabled"
 >;
-type ProfileLite = Pick<
-  Profile,
-  "id" | "name" | "nickname" | "role" | "login_id" | "room_id"
->;
+type ProfileLite = PublicChatProfile;
+type MeProfile = PublicChatProfile & { login_id: string; name: string };
 
 export function ChatRoom({
   room,
@@ -44,7 +46,7 @@ export function ChatRoom({
   isAppAdmin,
 }: {
   room: RoomLite;
-  me: ProfileLite;
+  me: MeProfile;
   isChair: boolean;
   isAppAdmin: boolean;
 }) {
@@ -87,7 +89,7 @@ export function ChatRoom({
         supabase.from("stances").select("*").eq("room_id", room.id),
         supabase
           .from("profiles")
-          .select("id, name, nickname, role, login_id, room_id")
+          .select(profileSelectColumns(room.is_name_visible))
           .eq("room_id", room.id),
       ]);
       if (!mounted) return;
@@ -95,7 +97,16 @@ export function ChatRoom({
       setMessages(msgs);
       setStances((sRes.data ?? []) as StanceRow[]);
       const pmap: Record<string, ProfileLite> = {};
-      for (const p of (pRes.data ?? []) as ProfileLite[]) pmap[p.id] = p;
+      for (const p of (pRes.data ?? []) as unknown as Array<{
+        id: string;
+        nickname: string;
+        role: ProfileLite["role"];
+        room_id: string | null;
+        name?: string | null;
+        login_id?: string | null;
+      }>) {
+        pmap[p.id] = toPublicChatProfile(p, room.is_name_visible);
+      }
       setProfiles(pmap);
       const mine = (sRes.data ?? []).find(
         (s: StanceRow) => s.user_id === me.id,
@@ -130,7 +141,7 @@ export function ChatRoom({
     return () => {
       mounted = false;
     };
-  }, [supabase, room.id, me.id]);
+  }, [supabase, room.id, me.id, room.is_name_visible]);
 
   // Realtime subscription
   useEffect(() => {
@@ -141,7 +152,10 @@ export function ChatRoom({
         { event: "*", schema: "public", table: "messages", filter: `room_id=eq.${room.id}` },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            setMessages((prev) => [...prev, payload.new as Message]);
+            const row = payload.new as Message;
+            setMessages((prev) =>
+              prev.some((m) => m.id === row.id) ? prev : [...prev, row],
+            );
           } else if (payload.eventType === "UPDATE") {
             setMessages((prev) =>
               prev.map((m) =>
@@ -331,16 +345,30 @@ export function ChatRoom({
         stanceToSend = myStance;
       }
       try {
-        const { error } = await supabase.from("messages").insert({
-          room_id: room.id,
-          user_id: me.id,
-          content,
-          stance: stanceToSend,
-          parent_id: parentId,
-        });
-        if (error) alert("送信に失敗しました: " + error.message);
-      } catch {
-        alert("送信に失敗しました。");
+        const { data, error } = await supabase
+          .from("messages")
+          .insert({
+            room_id: room.id,
+            user_id: me.id,
+            content,
+            stance: stanceToSend,
+            parent_id: parentId,
+          })
+          .select("*")
+          .single();
+        if (error || !data) {
+          throw new Error(error?.message ?? "送信に失敗しました");
+        }
+        const row = data as Message;
+        setMessages((prev) =>
+          prev.some((m) => m.id === row.id) ? prev : [...prev, row],
+        );
+      } catch (err) {
+        alert(
+          "送信に失敗しました: " +
+            (err instanceof Error ? err.message : String(err)),
+        );
+        throw err;
       }
     },
     [supabase, me.id, room.id, myStance, isModerator],
@@ -461,12 +489,17 @@ export function ChatRoom({
               <h1 className="heading-serif truncate text-lg text-ink">
                 {room.theme}
               </h1>
+              {!isModerator && (
+                <p className="mt-0.5 hidden text-[11px] text-muted sm:block">
+                  賛成か反対かを選んで、理由を書いて議論しましょう。
+                </p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-muted sm:inline">
+            <span className="max-w-[7rem] truncate text-muted sm:max-w-none sm:inline">
               {me.nickname}
-              {room.is_name_visible && ` (${me.name})`}
+              {room.is_name_visible && me.name ? ` (${me.name})` : ""}
             </span>
             {isChairAccount && (
               <Link href="/dashboard" className="btn-secondary text-xs">

@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Message, Profile } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
-type ProfileLite = Pick<Profile, "id" | "name" | "nickname" | "role">;
+type ProfileLite = Pick<Profile, "id" | "nickname" | "role"> &
+  Partial<Pick<Profile, "name">>;
 
 export interface LikeState {
   count: number;
@@ -44,9 +45,14 @@ export function MessageList({
 
   if (messages.length === 0) {
     return (
-      <p className="py-12 text-center text-sm text-muted">
-        まだメッセージがありません。最初の意見を投稿しましょう。
-      </p>
+      <div className="px-2 py-10 text-center">
+        <p className="text-sm font-semibold text-ink">最初の意見を書こう</p>
+        <ol className="mx-auto mt-3 max-w-xs list-decimal space-y-1 pl-5 text-left text-sm leading-relaxed text-muted">
+          <li>左（または下）で賛成か反対かを選ぶ</li>
+          <li>「なぜそう思うか」を1文以上書く</li>
+          <li>相手の意見に返信して議論を深める</li>
+        </ol>
+      </div>
     );
   }
 
@@ -305,7 +311,7 @@ function MessageRow({
               <button
                 type="button"
                 onClick={() => setReportOpen(true)}
-                className="font-medium tracking-wide text-muted hover:text-rose-400"
+                className="font-medium tracking-wide text-rose-300 hover:text-rose-200"
                 title="この発言をアプリ管理者に通報"
               >
                 通報

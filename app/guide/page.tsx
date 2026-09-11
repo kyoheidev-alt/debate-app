@@ -50,8 +50,8 @@ export default function GuidePage() {
           <ol className="list-decimal space-y-3 pl-5 text-sm leading-relaxed">
             <li>
               <strong className="text-ink">トップページ</strong>で、議長から共有された{" "}
-              <strong className="text-gold-500">ルームID（UUID）</strong>
-              を入力し、入室ページへ進みます。
+              <strong className="text-gold-500">招待リンク</strong>
+              をそのまま貼るか、ルームIDを入力して入室ページへ進みます。
             </li>
             <li>
               ルームページで議長から登録された{" "}

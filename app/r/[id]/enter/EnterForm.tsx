@@ -107,7 +107,9 @@ export function EnterForm({ roomId }: { roomId: string }) {
     <>
       <form onSubmit={onSubmit} className="card flex flex-col gap-4">
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium tracking-wide text-ink">ID</span>
+          <span className="font-medium tracking-wide text-ink">
+            参加用ID（学籍番号など）
+          </span>
           <input
             type="text"
             autoComplete="off"

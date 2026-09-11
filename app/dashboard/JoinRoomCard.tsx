@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { joinRoom } from "./actions";
+import { extractRoomId } from "@/lib/roomId";
 import { isNextRedirectError } from "@/lib/utils";
 
 export function JoinRoomCard() {
@@ -12,8 +13,15 @@ export function JoinRoomCard() {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const parsed = extractRoomId(roomId);
+    if (!parsed) {
+      setError(
+        "ルームIDが見つかりません。招待リンクをそのまま貼るか、IDを入力してください。",
+      );
+      return;
+    }
     const fd = new FormData();
-    fd.set("room_id", roomId);
+    fd.set("room_id", parsed);
     startTransition(async () => {
       try {
         await joinRoom(fd);
@@ -29,13 +37,13 @@ export function JoinRoomCard() {
       <div>
         <h2 className="text-lg font-semibold">既存のルームに参加</h2>
         <p className="text-sm text-muted">
-          議長から共有されたルーム ID を入力します。現在所属中のルームからは自動で抜けます。
+          招待リンクまたはルームIDを貼ります。現在所属中のルームからは自動で抜けます。
         </p>
       </div>
       <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row">
         <input
           className="input flex-1 font-mono"
-          placeholder="ルーム ID (UUID)"
+          placeholder="リンクを貼るか、ルームIDを入力"
           value={roomId}
           onChange={(e) => setRoomId(e.target.value)}
           required

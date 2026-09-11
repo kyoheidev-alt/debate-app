@@ -10,7 +10,11 @@ export default function LoginPage() {
   // of the page can prerender.
   return (
     <Suspense
-      fallback={<h1 className="text-center text-2xl font-bold text-slate-900">議長ログイン</h1>}
+      fallback={
+        <h1 className="heading-serif text-center text-2xl text-gold-500">
+          議長ログイン
+        </h1>
+      }
     >
       <LoginForm />
     </Suspense>
@@ -82,7 +86,9 @@ function LoginForm() {
 
   return (
     <>
-      <h1 className="text-center text-2xl font-bold text-slate-900">議長ログイン</h1>
+      <h1 className="heading-serif text-center text-2xl text-gold-500">
+        議長ログイン
+      </h1>
 
       {!resetMode ? (
         <form onSubmit={onSubmit} className="card flex flex-col gap-4">

@@ -1,14 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { getLastRoomId } from "@/lib/studentEntryStorage";
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { extractRoomId } from "@/lib/roomId";
 
 export function RoomIdEntryForm() {
-  const router = useRouter();
   const [roomId, setRoomId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [lastRoom, setLastRoom] = useState<string | null>(null);
@@ -19,33 +15,41 @@ export function RoomIdEntryForm() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = roomId.trim();
-    if (!UUID_RE.test(trimmed)) {
-      setError("ルームID（UUID形式）を正しく入力してください。");
+    const parsed = extractRoomId(roomId);
+    if (!parsed) {
+      setError(
+        "ルームIDが見つかりません。議長から共有されたリンクをそのまま貼るか、IDを入力してください。",
+      );
       return;
     }
     setError(null);
-    router.push(`/r/${trimmed}/enter`);
+    window.location.assign(`/r/${parsed}/enter`);
   }
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1.5 text-sm">
-        <span className="font-medium tracking-wide text-ink">ルームID</span>
+        <span className="font-medium tracking-wide text-ink">
+          招待リンク または ルームID
+        </span>
         <input
           type="text"
           required
           value={roomId}
           onChange={(e) => setRoomId(e.target.value)}
           className="input font-mono"
-          placeholder="例: 11111111-2222-3333-4444-555555555555"
+          placeholder="リンクを貼り付け"
           autoComplete="off"
           spellCheck={false}
+          inputMode="text"
         />
       </label>
 
       {error && (
-        <p className="rounded-sm border border-con/50 bg-con/20 px-3 py-2 text-sm text-ink">
+        <p
+          role="alert"
+          className="rounded-sm border border-con/50 bg-con/20 px-3 py-2 text-sm text-ink"
+        >
           {error}
         </p>
       )}
@@ -54,7 +58,7 @@ export function RoomIdEntryForm() {
         入室画面へ
       </button>
 
-      {lastRoom && lastRoom !== roomId.trim() && (
+      {lastRoom && lastRoom !== extractRoomId(roomId) && (
         <button
           type="button"
           onClick={() => setRoomId(lastRoom)}

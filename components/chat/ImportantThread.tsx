@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 import { MessageInput } from "./MessageInput";
 import type { LikeState } from "./MessageList";
 
-type ProfileLite = Pick<Profile, "id" | "name" | "nickname" | "role">;
+type ProfileLite = Pick<Profile, "id" | "nickname" | "role"> &
+  Partial<Pick<Profile, "name">>;
 
 export function ImportantThread({
   roots,

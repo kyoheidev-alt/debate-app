@@ -8,6 +8,7 @@ import { UserCsvImport } from "./UserCsvImport";
 import { DeleteRoomButton } from "./DeleteRoomButton";
 import { NotificationBell } from "./NotificationBell";
 import { RosterPanel } from "./RosterPanel";
+import { ShareInviteCard } from "./ShareInviteCard";
 
 export const dynamic = "force-dynamic";
 
@@ -107,6 +108,8 @@ export default async function RoomManagePage({
             </p>
           )}
         </div>
+
+        <ShareInviteCard roomId={room.id} />
 
         <section className="card flex flex-col gap-4">
           <h2 className="text-lg font-semibold">ルーム設定</h2>

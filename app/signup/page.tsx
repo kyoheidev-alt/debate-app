@@ -24,7 +24,7 @@ export default function SignupPage() {
         </div>
       </header>
       <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-12">
-        <h1 className="text-center text-2xl font-bold text-slate-900">
+        <h1 className="heading-serif text-center text-2xl text-gold-500">
           アカウント作成
         </h1>
         <SignupForm />
