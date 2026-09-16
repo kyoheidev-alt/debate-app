@@ -21,11 +21,13 @@ const HEADER_MAP: Record<string, keyof ParsedRow> = {
   login_id: "login_id",
   id: "login_id",
   ID: "login_id",
+  学籍番号: "login_id",
   password: "password",
   パスワード: "password",
   name: "name",
   名前: "name",
   本名: "name",
+  氏名: "name",
   nickname: "nickname",
   ニックネーム: "nickname",
 };
@@ -85,7 +87,7 @@ export function UserCsvImport({
         });
         if (out.length === 0) {
           setError(
-            `有効な行が見つかりません。必須ヘッダー: login_id (or ID), name (or 名前)。任意: nickname, password`,
+            `有効な行が見つかりません。必須ヘッダー: login_id / id / 学籍番号, name / 名前 / 氏名。任意: nickname, password`,
           );
           return;
         }
