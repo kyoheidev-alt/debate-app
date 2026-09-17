@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Brand } from "@/components/Brand";
+import { generateNickname } from "@/lib/utils";
 import { NicknameForm } from "./NicknameForm";
 
 export const dynamic = "force-dynamic";
@@ -87,7 +88,8 @@ export default async function SetupNicknamePage({
           </p>
         </section>
 
-        <NicknameForm roomId={room.id} initialNickname={profile.nickname ?? ""} />
+        {/* has_set_nickname=false 時の DB 仮値は学籍番号のため、ランダム初期値を渡す */}
+        <NicknameForm roomId={room.id} initialNickname={generateNickname()} />
       </main>
     </div>
   );
