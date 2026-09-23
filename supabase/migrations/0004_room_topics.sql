@@ -12,11 +12,6 @@
 -- anything; the next theme change does.
 -- =========================================================================
 
--- Hold writes on the live tables until this migration commits, so a
--- room created mid-migration still gets its opening topic from the trigger.
-lock table public.rooms in share row exclusive mode;
-lock table public.messages in share row exclusive mode;
-
 create table public.room_topics (
   id uuid primary key default gen_random_uuid(),
   room_id uuid not null references public.rooms(id) on delete cascade,
