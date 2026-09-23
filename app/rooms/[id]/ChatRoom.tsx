@@ -12,6 +12,7 @@ import type {
   MessageLike,
   MessageStance,
   Room,
+  RoomTopic,
   Stance,
   StanceRow,
 } from "@/lib/supabase/types";
@@ -28,13 +29,24 @@ import { Barometer } from "@/components/chat/Barometer";
 import { MessageList, type LikeState } from "@/components/chat/MessageList";
 import { MessageInput } from "@/components/chat/MessageInput";
 import { ImportantThread } from "@/components/chat/ImportantThread";
+import { PreviousTopics } from "@/components/chat/PreviousTopics";
+import {
+  archivedTopicSections,
+  countSideSpeakers,
+  liveTopicMessages,
+} from "@/lib/topics";
 import { heartbeat, leaveRoom } from "./presence-actions";
 import { editMessage, deleteMessage } from "./actions";
 import { clearStudentEntry } from "@/lib/studentEntryStorage";
 
 type RoomLite = Pick<
   Room,
-  "id" | "theme" | "is_name_visible" | "chair_id" | "likes_enabled"
+  | "id"
+  | "theme"
+  | "is_name_visible"
+  | "chair_id"
+  | "likes_enabled"
+  | "current_topic_id"
 >;
 type ProfileLite = PublicChatProfile;
 type MeProfile = PublicChatProfile & { login_id: string; name: string };
@@ -53,7 +65,13 @@ export function ChatRoom({
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [stances, setStances] = useState<StanceRow[]>([]);
+  const [topics, setTopics] = useState<
+    Pick<RoomTopic, "id" | "theme" | "ordinal">[]
+  >([]);
+  const [theme, setTheme] = useState(room.theme);
+  const [currentTopicId, setCurrentTopicId] = useState<string | null>(
+    room.current_topic_id,
+  );
   const [profiles, setProfiles] = useState<Record<string, ProfileLite>>({});
   const [myStance, setMyStance] = useState<Stance | null>(null);
   // likes[messageId] = { count, likedByMe }
@@ -62,6 +80,11 @@ export function ChatRoom({
   const [leaving, setLeaving] = useState(false);
   const [mobileImportantOpen, setMobileImportantOpen] = useState(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
+
+  useEffect(() => {
+    setTheme(room.theme);
+    setCurrentTopicId(room.current_topic_id);
+  }, [room.theme, room.current_topic_id]);
 
   // Moderator (chair of this room or any app_admin) posts neutral
   // messages with stance='chair' and never picks pro/con.
@@ -80,7 +103,7 @@ export function ChatRoom({
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const [mRes, sRes, pRes] = await Promise.all([
+      const [mRes, sRes, pRes, tRes] = await Promise.all([
         supabase
           .from("messages")
           .select("*")
@@ -91,11 +114,18 @@ export function ChatRoom({
           .from("profiles")
           .select(profileSelectColumns(room.is_name_visible))
           .eq("room_id", room.id),
+        supabase
+          .from("room_topics")
+          .select("id, theme, ordinal")
+          .eq("room_id", room.id)
+          .order("ordinal", { ascending: true }),
       ]);
       if (!mounted) return;
       const msgs = (mRes.data ?? []) as Message[];
       setMessages(msgs);
-      setStances((sRes.data ?? []) as StanceRow[]);
+      setTopics(
+        (tRes.data ?? []) as Pick<RoomTopic, "id" | "theme" | "ordinal">[],
+      );
       const pmap: Record<string, ProfileLite> = {};
       for (const p of (pRes.data ?? []) as unknown as Array<{
         id: string;
@@ -143,6 +173,28 @@ export function ChatRoom({
     };
   }, [supabase, room.id, me.id, room.is_name_visible]);
 
+  const refreshTopic = useCallback(async () => {
+    const [{ data: roomRow }, { data: topicRows }] = await Promise.all([
+      supabase
+        .from("rooms")
+        .select("theme, current_topic_id")
+        .eq("id", room.id)
+        .maybeSingle(),
+      supabase
+        .from("room_topics")
+        .select("id, theme, ordinal")
+        .eq("room_id", room.id)
+        .order("ordinal", { ascending: true }),
+    ]);
+    if (roomRow?.theme) setTheme(roomRow.theme);
+    if (roomRow && "current_topic_id" in roomRow) {
+      setCurrentTopicId(roomRow.current_topic_id);
+    }
+    setTopics(
+      (topicRows ?? []) as Pick<RoomTopic, "id" | "theme" | "ordinal">[],
+    );
+  }, [supabase, room.id]);
+
   // Realtime subscription
   useEffect(() => {
     const channel = supabase
@@ -173,28 +225,21 @@ export function ChatRoom({
       )
       .on(
         "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "rooms", filter: `id=eq.${room.id}` },
+        () => {
+          void refreshTopic();
+        },
+      )
+      .on(
+        "postgres_changes",
         { event: "*", schema: "public", table: "stances", filter: `room_id=eq.${room.id}` },
         (payload) => {
           if (payload.eventType === "DELETE") {
             const old = payload.old as StanceRow;
-            setStances((prev) =>
-              prev.filter(
-                (s) => !(s.user_id === old.user_id && s.room_id === old.room_id),
-              ),
-            );
             if (old.user_id === me.id) setMyStance(null);
             return;
           }
           const row = payload.new as StanceRow;
-          setStances((prev) => {
-            const idx = prev.findIndex(
-              (s) => s.user_id === row.user_id && s.room_id === row.room_id,
-            );
-            if (idx === -1) return [...prev, row];
-            const next = [...prev];
-            next[idx] = row;
-            return next;
-          });
           if (row.user_id === me.id) setMyStance(row.stance);
         },
       )
@@ -241,7 +286,17 @@ export function ChatRoom({
       supabase.removeChannel(channel);
       channelRef.current = null;
     };
-  }, [supabase, room.id, me.id]);
+  }, [supabase, room.id, me.id, refreshTopic]);
+
+  // If a theme-change event is missed, the next time the tab is visible
+  // the live chat and the previous-topic record are loaded again.
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible") void refreshTopic();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [refreshTopic]);
 
   const setStance = useCallback(
     async (next: Stance) => {
@@ -440,13 +495,23 @@ export function ChatRoom({
     await deleteMessage(messageId);
   }, []);
 
-  const proCount = stances.filter((s) => s.stance === "pro").length;
-  const conCount = stances.filter((s) => s.stance === "con").length;
+  const liveMessages = useMemo(
+    () => liveTopicMessages(messages, currentTopicId),
+    [messages, currentTopicId],
+  );
+  const archivedSections = useMemo(
+    () => archivedTopicSections(topics, messages, currentTopicId),
+    [topics, messages, currentTopicId],
+  );
+  const { pro: proCount, con: conCount } = useMemo(
+    () => countSideSpeakers(liveMessages),
+    [liveMessages],
+  );
 
-  const rootMessages = messages.filter((m) => !m.parent_id);
+  const rootMessages = liveMessages.filter((m) => !m.parent_id);
   const childrenByParent = useMemo(() => {
     const map = new Map<string, Message[]>();
-    for (const m of messages) {
+    for (const m of liveMessages) {
       if (m.parent_id) {
         const arr = map.get(m.parent_id) ?? [];
         arr.push(m);
@@ -457,7 +522,7 @@ export function ChatRoom({
       arr.sort((a, b) => a.created_at.localeCompare(b.created_at));
     }
     return map;
-  }, [messages]);
+  }, [liveMessages]);
 
   const importantRoots = rootMessages.filter((m) => m.is_important);
 
@@ -487,7 +552,7 @@ export function ChatRoom({
                 テーマ
               </p>
               <h1 className="heading-serif truncate text-lg text-ink">
-                {room.theme}
+                {theme}
               </h1>
               {!isModerator && (
                 <p className="mt-0.5 hidden text-[11px] text-muted sm:block">
@@ -655,6 +720,15 @@ export function ChatRoom({
                 {loading ? (
                   <p className="text-center text-sm text-muted">読み込み中…</p>
                 ) : (
+                  <>
+                  <PreviousTopics
+                    sections={archivedSections}
+                    profiles={profiles}
+                    meId={me.id}
+                    isNameVisible={room.is_name_visible}
+                    likesEnabled={room.likes_enabled}
+                    likes={likes}
+                  />
                   <MessageList
                     messages={rootMessages}
                     profiles={profiles}
@@ -668,6 +742,7 @@ export function ChatRoom({
                     onEdit={onEditMessage}
                     onDelete={onDeleteMessage}
                   />
+                  </>
                 )}
               </div>
               {/* モバイル: 立場（学生）または議長説明 — 入力の直上に常時表示 */}

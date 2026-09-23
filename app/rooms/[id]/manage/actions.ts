@@ -4,15 +4,36 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireChairOrAppAdmin } from "@/lib/auth";
+import { shouldArchiveTopic } from "@/lib/topics";
 
 export async function updateRoomTheme(roomId: string, theme: string) {
   const auth = await requireChairOrAppAdmin(roomId);
   if (auth.kind !== "ok") redirect("/login");
 
+  const next = theme.trim();
+  if (!next) throw new Error("テーマを入力してください。");
+
   const supabase = await createClient();
+  const { data: existing, error: readError } = await supabase
+    .from("rooms")
+    .select("theme")
+    .eq("id", roomId)
+    .maybeSingle();
+  if (readError) throw new Error(readError.message);
+  if (!existing) throw new Error("ルームが見つかりません");
+
+  // Same text must not close the live chat. A different text updates
+  // rooms.theme; the database trigger then opens a new topic and leaves
+  // existing message rows on the previous one.
+  if (!shouldArchiveTopic(existing.theme, next)) {
+    revalidatePath(`/rooms/${roomId}/manage`);
+    revalidatePath(`/rooms/${roomId}`);
+    return;
+  }
+
   const { error } = await supabase
     .from("rooms")
-    .update({ theme: theme.trim() })
+    .update({ theme: next })
     .eq("id", roomId);
   if (error) throw new Error(error.message);
 

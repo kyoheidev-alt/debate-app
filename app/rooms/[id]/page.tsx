@@ -27,7 +27,9 @@ export default async function RoomPage({
 
   const { data: room } = await supabase
     .from("rooms")
-    .select("id, theme, is_name_visible, chair_id, likes_enabled")
+    .select(
+      "id, theme, is_name_visible, chair_id, likes_enabled, current_topic_id",
+    )
     .eq("id", id)
     .maybeSingle();
   if (!room) notFound();

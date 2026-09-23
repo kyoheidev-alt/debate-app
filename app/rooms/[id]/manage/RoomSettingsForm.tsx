@@ -91,17 +91,22 @@ export function RoomSettingsForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <form onSubmit={saveTheme} className="flex flex-col gap-2 sm:flex-row">
-        <input
-          className="input flex-1"
-          value={t}
-          onChange={(e) => setT(e.target.value)}
-          placeholder="テーマ"
-          required
-        />
-        <button type="submit" disabled={pending} className="btn-primary">
-          保存
-        </button>
+      <form onSubmit={saveTheme} className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            className="input flex-1"
+            value={t}
+            onChange={(e) => setT(e.target.value)}
+            placeholder="テーマ"
+            required
+          />
+          <button type="submit" disabled={pending} className="btn-primary">
+            保存
+          </button>
+        </div>
+        <p className="text-xs text-muted">
+          テーマを変えて保存すると、これまでの発言は「前の議題」に残し、チャットは空から始まります。同じ文面の保存では区切りません。
+        </p>
       </form>
 
       <label className="flex cursor-pointer items-center justify-between rounded-lg border border-navy-600 bg-navy-800 px-4 py-3">
