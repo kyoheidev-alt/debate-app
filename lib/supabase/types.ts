@@ -30,6 +30,11 @@ export interface Room {
   is_name_visible: boolean;
   likes_enabled: boolean;
   /**
+   * Live debate prompt. Messages with this `topic_id` are the chat.
+   * Older `room_topics` rows are the readable record of previous themes.
+   */
+  current_topic_id: string | null;
+  /**
    * Per-room override for the maximum number of registered students
    * (`profiles.room_id = this.id`). When `null`, the effective limit
    * falls back to `app_settings.default_room_user_limit` (resolved by
@@ -79,6 +84,18 @@ export interface Message {
   edited_at: string | null;
   deleted_at: string | null;
   created_at: string;
+  /** Prompt this post was written under. Fixed at insert. */
+  topic_id: string;
+}
+
+/** One debate prompt inside a room. `ended_at` is set when the theme changes. */
+export interface RoomTopic {
+  id: string;
+  room_id: string;
+  theme: string;
+  ordinal: number;
+  started_at: string;
+  ended_at: string | null;
 }
 
 /**

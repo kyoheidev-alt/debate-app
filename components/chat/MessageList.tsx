@@ -24,6 +24,7 @@ export function MessageList({
   onToggleImportant,
   onEdit,
   onDelete,
+  readOnly = false,
 }: {
   messages: Message[];
   profiles: Record<string, ProfileLite>;
@@ -36,12 +37,15 @@ export function MessageList({
   onToggleImportant: (messageId: string, next: boolean) => void;
   onEdit: (messageId: string, content: string) => void | Promise<void>;
   onDelete: (messageId: string) => void | Promise<void>;
+  /** Archived prompts are readable but not part of the live actions. */
+  readOnly?: boolean;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (readOnly) return;
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+  }, [messages.length, readOnly]);
 
   if (messages.length === 0) {
     return (
@@ -68,6 +72,7 @@ export function MessageList({
           isNameVisible={isNameVisible}
           likesEnabled={likesEnabled}
           like={likes[m.id]}
+          readOnly={readOnly}
           onToggleLike={onToggleLike}
           onToggleImportant={onToggleImportant}
           onEdit={onEdit}
@@ -91,6 +96,7 @@ function MessageRow({
   onToggleImportant,
   onEdit,
   onDelete,
+  readOnly = false,
 }: {
   message: Message;
   author: ProfileLite | undefined;
@@ -103,6 +109,7 @@ function MessageRow({
   onToggleImportant: (messageId: string, next: boolean) => void;
   onEdit: (messageId: string, content: string) => void | Promise<void>;
   onDelete: (messageId: string) => void | Promise<void>;
+  readOnly?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.content);
@@ -180,7 +187,11 @@ function MessageRow({
   }
 
   const canLike =
-    likesEnabled && !isMine && !isDeleted && message.stance !== "chair"
+    !readOnly &&
+    likesEnabled &&
+    !isMine &&
+    !isDeleted &&
+    message.stance !== "chair"
       ? true
       : false;
   const likeCount = like?.count ?? 0;
@@ -189,7 +200,8 @@ function MessageRow({
   // button on chair / app_admin messages because moderation of those
   // is not in scope for the report flow (and the chair cannot read
   // reports anyway).
-  const canReport = !isMine && !isDeleted && message.stance !== "chair";
+  const canReport =
+    !readOnly && !isMine && !isDeleted && message.stance !== "chair";
 
   return (
     <div className={cn("flex w-full", alignWrapper)}>
@@ -318,7 +330,7 @@ function MessageRow({
               </button>
             )}
 
-            {isAdmin && !isDeleted && (
+            {!readOnly && isAdmin && !isDeleted && (
               <>
                 <button
                   type="button"
