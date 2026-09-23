@@ -41,6 +41,8 @@ export function NicknameForm({
         <div className="flex gap-2">
           <input
             type="text"
+            name="nickname"
+            autoComplete="off"
             required
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}

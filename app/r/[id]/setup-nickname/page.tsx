@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Brand } from "@/components/Brand";
+import { initialSetupNickname } from "@/lib/setupNickname";
 import { NicknameForm } from "./NicknameForm";
 
 export const dynamic = "force-dynamic";
@@ -87,7 +88,10 @@ export default async function SetupNicknamePage({
           </p>
         </section>
 
-        <NicknameForm roomId={room.id} initialNickname={profile.nickname ?? ""} />
+        <NicknameForm
+          roomId={room.id}
+          initialNickname={initialSetupNickname(profile)}
+        />
       </main>
     </div>
   );
