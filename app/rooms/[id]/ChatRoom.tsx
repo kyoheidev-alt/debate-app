@@ -25,6 +25,12 @@ import {
   toPublicChatProfile,
   type PublicChatProfile,
 } from "@/lib/identity";
+import {
+  NICKNAME_CHANGED_EVENT,
+  profileIdFromNicknameBroadcast,
+  upsertPublicChatProfile,
+} from "@/lib/nickname";
+import { ChangeNicknameButton } from "@/components/chat/ChangeNicknameButton";
 import { Barometer } from "@/components/chat/Barometer";
 import { MessageList, type LikeState } from "@/components/chat/MessageList";
 import { MessageInput } from "@/components/chat/MessageInput";
@@ -79,7 +85,12 @@ export function ChatRoom({
   const [loading, setLoading] = useState(true);
   const [leaving, setLeaving] = useState(false);
   const [mobileImportantOpen, setMobileImportantOpen] = useState(false);
+  const [myNickname, setMyNickname] = useState(me.nickname);
   const channelRef = useRef<RealtimeChannel | null>(null);
+
+  useEffect(() => {
+    setMyNickname(me.nickname);
+  }, [me.nickname]);
 
   useEffect(() => {
     setTheme(room.theme);
@@ -172,6 +183,30 @@ export function ChatRoom({
       mounted = false;
     };
   }, [supabase, room.id, me.id, room.is_name_visible]);
+
+  const refreshProfile = useCallback(
+    async (userId: string) => {
+      const { data } = await supabase
+        .from("profiles")
+        .select(profileSelectColumns(room.is_name_visible))
+        .eq("id", userId)
+        .maybeSingle();
+      if (!data) return;
+      const row = data as unknown as {
+        id: string;
+        nickname: string;
+        role: ProfileLite["role"];
+        room_id: string | null;
+        name?: string | null;
+        login_id?: string | null;
+      };
+      setProfiles((prev) =>
+        upsertPublicChatProfile(prev, row, room.is_name_visible),
+      );
+      if (row.id === me.id) setMyNickname(row.nickname);
+    },
+    [supabase, room.is_name_visible, me.id],
+  );
 
   const refreshTopic = useCallback(async () => {
     const [{ data: roomRow }, { data: topicRows }] = await Promise.all([
@@ -280,13 +315,78 @@ export function ChatRoom({
           }
         },
       )
+      .on("broadcast", { event: NICKNAME_CHANGED_EVENT }, ({ payload }) => {
+        const userId = profileIdFromNicknameBroadcast(payload);
+        if (userId) void refreshProfile(userId);
+      })
       .subscribe();
     channelRef.current = channel;
     return () => {
       supabase.removeChannel(channel);
       channelRef.current = null;
     };
-  }, [supabase, room.id, me.id, refreshTopic]);
+  }, [supabase, room.id, me.id, refreshTopic, refreshProfile]);
+
+  // Profile updates are on their own channel so a missing publication
+  // cannot drop message / like events. On failure we stop this channel;
+  // the broadcast above still asks peers to re-read the profile.
+  useEffect(() => {
+    let active = true;
+    const channel = supabase
+      .channel(`room-profiles:${room.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `room_id=eq.${room.id}`,
+        },
+        (payload) => {
+          const id = (payload.new as { id?: unknown }).id;
+          if (typeof id === "string") void refreshProfile(id);
+        },
+      )
+      .subscribe((status) => {
+        if (!active) return;
+        if (status === "CHANNEL_ERROR") {
+          active = false;
+          void supabase.removeChannel(channel);
+        }
+      });
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [supabase, room.id, refreshProfile]);
+
+  const handleNicknameChanged = useCallback(
+    (nickname: string) => {
+      setMyNickname(nickname);
+      setProfiles((prev) =>
+        upsertPublicChatProfile(
+          prev,
+          {
+            id: me.id,
+            nickname,
+            role: me.role,
+            room_id: me.room_id,
+            name: me.name,
+            login_id: me.login_id,
+          },
+          room.is_name_visible,
+        ),
+      );
+      const channel = channelRef.current;
+      if (!channel) return;
+      void channel.send({
+        type: "broadcast",
+        event: NICKNAME_CHANGED_EVENT,
+        payload: { user_id: me.id },
+      });
+    },
+    [me.id, me.role, me.room_id, me.name, me.login_id, room.is_name_visible],
+  );
 
   // If a theme-change event is missed, the next time the tab is visible
   // the live chat and the previous-topic record are loaded again.
@@ -562,10 +662,16 @@ export function ChatRoom({
             </div>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <span className="max-w-[7rem] truncate text-muted sm:max-w-none sm:inline">
-              {me.nickname}
-              {room.is_name_visible && me.name ? ` (${me.name})` : ""}
-            </span>
+            <div className="flex max-w-[9rem] flex-col items-end gap-0.5 sm:max-w-none">
+              <span className="w-full truncate text-right text-muted">
+                {myNickname}
+                {room.is_name_visible && me.name ? ` (${me.name})` : ""}
+              </span>
+              <ChangeNicknameButton
+                currentNickname={myNickname}
+                onChanged={handleNicknameChanged}
+              />
+            </div>
             {isChairAccount && (
               <Link href="/dashboard" className="btn-secondary text-xs">
                 ダッシュボード

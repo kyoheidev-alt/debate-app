@@ -1,17 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { validateNickname } from "@/lib/nickname";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export async function saveNickname(roomId: string, nicknameRaw: string) {
-  const nickname = nicknameRaw.trim();
-  if (!nickname) {
-    throw new Error("ニックネームを入力してください。");
-  }
-  if (nickname.length > 20) {
-    throw new Error("ニックネームは 20 文字以内にしてください。");
-  }
+  const parsed = validateNickname(nicknameRaw);
+  if (!parsed.ok) throw new Error(parsed.error);
+  const nickname = parsed.nickname;
   if (!roomId) {
     throw new Error("ルームIDが不正です。");
   }

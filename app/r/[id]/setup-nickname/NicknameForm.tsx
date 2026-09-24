@@ -2,6 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { InlineSpinner } from "@/components/InlineSpinner";
+import {
+  NICKNAME_FIELD_LABEL,
+  NICKNAME_GUIDANCE,
+  NICKNAME_MAX_LENGTH,
+} from "@/lib/nickname";
 import { generateNickname, isNextRedirectError } from "@/lib/utils";
 import { saveNickname } from "./actions";
 
@@ -33,11 +38,9 @@ export function NicknameForm({
     <form onSubmit={onSubmit} className="card flex flex-col gap-4">
       <label className="flex flex-col gap-1.5 text-sm">
         <span className="font-medium tracking-wide text-ink">
-          ニックネーム（20文字以内）
+          {NICKNAME_FIELD_LABEL}
         </span>
-        <p className="text-xs text-muted">
-          チャットに出る名前です。本名や学籍番号は使わないでください。
-        </p>
+        <p className="text-xs text-muted">{NICKNAME_GUIDANCE}</p>
         <div className="flex gap-2">
           <input
             type="text"
@@ -48,7 +51,7 @@ export function NicknameForm({
             onChange={(e) => setNickname(e.target.value)}
             className="input flex-1"
             placeholder="例: パンダ1234"
-            maxLength={20}
+            maxLength={NICKNAME_MAX_LENGTH}
             disabled={pending}
           />
           <button

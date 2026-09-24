@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { chatAuthorLabel } from "@/lib/nickname";
 import type { Message, Profile, Stance } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 import { MessageInput } from "./MessageInput";
@@ -121,8 +122,7 @@ function ThreadNode({
 
   const replies = childrenByParent.get(message.id) ?? [];
   const author = profiles[message.user_id];
-  const displayName =
-    (isNameVisible && author?.name) || author?.nickname || "不明";
+  const displayName = chatAuthorLabel(author, isNameVisible);
   const isPro = message.stance === "pro";
   const isCon = message.stance === "con";
   const isChairMsg = message.stance === "chair";

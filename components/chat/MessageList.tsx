@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { chatAuthorLabel } from "@/lib/nickname";
 import type { Message, Profile } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
@@ -123,8 +124,7 @@ function MessageRow({
   const isDeleted = message.deleted_at != null;
   const isEdited = message.edited_at != null && !isDeleted;
 
-  const displayName =
-    (isNameVisible && author?.name) || author?.nickname || "不明";
+  const displayName = chatAuthorLabel(author, isNameVisible);
 
   const alignWrapper = isPro
     ? "justify-start"
